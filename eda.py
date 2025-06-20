@@ -1,5 +1,10 @@
 import pandas as pd
-import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+import json
+import requests
+import matplotlib.pyplot as plt
+import seaborn as sns
 df = pd.read_csv("data/sac_intake_outcome_data_2019-2024.csv")
 
 #print(df[df["us_county_name"].isin(["Fresno County", "Los Angeles County"])])
@@ -73,3 +78,25 @@ print(result)
 #        'youth_shelter_euthanasia_count', 'adult_shelter_euthanasia_count',
 #        'age_unknown_shelter_euthanasia_count', 'shelter_euthanasia_total'],
 #       dtype='object')
+df_ca = df[df['location_state_us'] == 'CA'].copy()
+df_ca['us_fips_code'] = df_ca['us_fips_code'].astype(int).astype(str).str.zfill(5)
+
+top_fips = df_ca['us_fips_code'].value_counts().head(5).index
+df_top = df_ca[df_ca['us_fips_code'].isin(top_fips)]
+
+fips_to_county = {
+    '06001': 'Alameda',
+    '06065': 'Riverside',
+    '06073': 'San Francisco',
+    '06037': 'San Diego',
+    '06059': 'Orange',
+}
+df_top['county_name'] = df_top['us_fips_code'].apply(
+    lambda x: fips_to_county[x] if x in fips_to_county else x
+)
+plt.figure(figsize=(10, 6))
+sns.kdeplot(data=df_top, x='gross_intakes', hue='county_name', fill=True)
+plt.title('Gross Intake Distributions by Top CA Counties')
+plt.xlabel('Gross Intakes')
+plt.ylabel('Density')
+plt.show()
